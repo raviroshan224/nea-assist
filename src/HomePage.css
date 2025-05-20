@@ -1,0 +1,74 @@
+.homepage-container {
+  padding-top: 40px;
+  padding-bottom: 40px;
+}
+
+.homepage-title {
+  text-align: center;
+  font-weight: 700;
+  font-size: 2rem;
+  margin-bottom: 30px;
+  color: #1f1f1f;
+}
+
+.course-card {
+  background: #ffffff;
+  border-radius: 15px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.07);
+  padding: 25px 20px;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.course-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.1);
+}
+
+.course-name {
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: #343a40;
+  margin-bottom: 10px;
+  text-align: center;
+}
+
+.course-desc {
+  font-size: 0.9rem;
+  text-align: center;
+  color: #6c757d;
+  margin-bottom: 20px;
+}
+
+.course-button {
+  border: none;
+  background: #007bff;
+  color: #fff;
+  padding: 10px 0;
+  width: 100%;
+  border-radius: 8px;
+  font-weight: 500;
+  transition: background 0.3s ease;
+}
+
+.course-button:hover {
+  background: #0056b3;
+}
+
+.homepage-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 70vh;
+}
+
+.empty-message {
+  text-align: center;
+  font-size: 1.5rem;
+  margin-top: 100px;
+  color: #888;
+}

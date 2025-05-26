@@ -1,72 +1,80 @@
 import React, { useEffect, useState } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
 import { db } from '../firebase';
-import { collection, getDocs } from 'firebase/firestore';
-import { useNavigate } from 'react-router-dom';
+import { collection, getDocs, doc, getDoc } from 'firebase/firestore';
 
-const HomePage = () => {
-  const [universities, setUniversities] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [hoveredCard, setHoveredCard] = useState(null);
+const CoursePage = () => {
+  const { universityId } = useParams();
   const navigate = useNavigate();
 
+  const [universityName, setUniversityName] = useState('');
+  const [courses, setCourses] = useState([]);
+  const [hoveredCard, setHoveredCard] = useState(null);
+  const [loading, setLoading] = useState(true);
+
   useEffect(() => {
-    const fetchUniversities = async () => {
+    const fetchCourses = async () => {
       try {
-        const snapshot = await getDocs(collection(db, 'universities'));
+        const uniDoc = await getDoc(doc(db, 'universities', universityId));
+        setUniversityName(uniDoc.data()?.name || 'University');
+
+        const snapshot = await getDocs(
+          collection(db, 'universities', universityId, 'courses')
+        );
         const data = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
-        setUniversities(data);
+        setCourses(data);
       } catch (err) {
-        console.error('Error loading universities:', err);
+        console.error('Error loading courses:', err);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchUniversities();
-  }, []);
+    fetchCourses();
+  }, [universityId]);
 
-  const handleCardClick = (universityId) => {
-    navigate(`/university/${universityId}/courses`);
+  const handleCardClick = (courseId) => {
+    navigate(`/subjects/${courseId}`);
   };
 
-  const getCardStyle = (universityId) => ({
+  const getCardStyle = (courseId) => ({
     ...styles.card,
     boxShadow:
-      hoveredCard === universityId
+      hoveredCard === courseId
         ? '0 10px 20px rgba(0, 0, 0, 0.15)'
         : '0 4px 12px rgba(0, 0, 0, 0.06)',
-    transform: hoveredCard === universityId ? 'translateY(-4px)' : 'translateY(0)',
+    transform: hoveredCard === courseId ? 'translateY(-4px)' : 'translateY(0)',
   });
 
   if (loading) {
     return (
       <div style={styles.loadingContainer}>
-        <p style={styles.loadingText}>Loading universities...</p>
+        <p style={styles.loadingText}>Loading courses...</p>
       </div>
     );
   }
 
-  if (universities.length === 0) {
+  if (courses.length === 0) {
     return (
       <div style={styles.loadingContainer}>
-        <p style={styles.loadingText}>No universities available yet. Stay tuned!</p>
+        <p style={styles.loadingText}>No courses available for this university.</p>
       </div>
     );
   }
 
   return (
     <div style={styles.page}>
-      <h1 style={styles.title}>Explore Universities</h1>
+      <h1 style={styles.title}>Courses at {universityName}</h1>
       <div style={styles.grid}>
-        {universities.map((uni) => (
+        {courses.map((course) => (
           <div
-            key={uni.id}
-            style={getCardStyle(uni.id)}
-            onMouseEnter={() => setHoveredCard(uni.id)}
+            key={course.id}
+            style={getCardStyle(course.id)}
+            onMouseEnter={() => setHoveredCard(course.id)}
             onMouseLeave={() => setHoveredCard(null)}
-            onClick={() => handleCardClick(uni.id)}
+            onClick={() => handleCardClick(course.id)}
           >
-            <span style={styles.courseName}>{uni.name}</span>
+            <span style={styles.courseName}>{course.name}</span>
           </div>
         ))}
       </div>
@@ -75,7 +83,7 @@ const HomePage = () => {
 };
 
 const styles = {
-  page: {
+ page: {
     minHeight: '100vh',
     padding: '60px 20px',
     maxWidth: 1200,
@@ -122,7 +130,6 @@ const styles = {
   loadingText: {
     fontSize: '1.25rem',
     color: '#444',
-  },
-};
+  },};
 
-export default HomePage;
+export default CoursePage;

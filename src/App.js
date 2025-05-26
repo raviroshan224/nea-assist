@@ -12,6 +12,7 @@ import Login from './components/Login';
 import Signup from './components/Signup';
 import AdminLogin from './components/AdminLogin';
 import ProtectedAdminRoute from './components/ProtectedAdminRoute';
+import CoursePage from './components/CoursePage';
 
 function App() {
   return (
@@ -34,6 +35,8 @@ function App() {
         {/* All other routes with Navbar (Layout) */}
         <Route path="/" element={<Layout />}>
           <Route index element={<HomePage />} />
+          <Route path="/university/:universityId/courses" element={<CoursePage />} />
+
           <Route path="/subjects/:courseId" element={<SubjectPage />} />
           <Route path="/chapters/:courseId/:subjectId" element={<ChapterPage />} />
           <Route path="/:courseSlug/:subjectSlug" element={<ChapterPage />} />

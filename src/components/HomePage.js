@@ -119,16 +119,14 @@ const styles = {
     fontSize: '2rem',
     fontWeight: 700,
     color: '#031539',
-    // textAlign: 'centers
     marginBottom: 50,
   },
   grid: {
-  display: 'grid',
-  gap: 30,
-  gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 320px))',
-  justifyContent: 'start', // optional to force left-aligned grid items
-},
-
+    display: 'grid',
+    gap: 20,
+    gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))',
+    justifyContent: 'start',
+  },
   card: {
     borderRadius: 14,
     padding: '36px 24px',
@@ -137,24 +135,24 @@ const styles = {
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    width: '100%',
+    // width: '100%',
     maxWidth: 340, // fixed max width for better consistency
-    margin: '0 auto', // center card within grid cell
+    // margin: '0 auto', // center card within grid cell
     boxShadow: '0 4px 12px rgba(0,0,0,0.1)', // optional for visual enhancement
   },
   cardContent: {
-    // textAlign: 'center',
+    display: 'flex',
+    flexDirection: 'column',
   },
   courseName: {
-    fontSize: '1.4rem',
+    fontSize: '1.25rem',
     fontWeight: 600,
-    color: '#333',
-    display: 'block',
-    marginBottom: 8,
+    color: '#222',
+    marginBottom: 6,
   },
   tag: {
-    fontSize: '0.9rem',
-    color: '#555',
+    fontSize: '0.85rem',
+    color: '#666',
     fontStyle: 'italic',
   },
   loadingContainer: {

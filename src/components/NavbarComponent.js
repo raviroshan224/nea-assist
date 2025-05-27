@@ -159,14 +159,17 @@ const NavbarComponent = () => {
             </div>
 
             <Nav className="ms-auto d-flex align-items-center gap-2 mt-3 mt-lg-0">
-              <Button
-                variant="outline-success"
-                className="custom-btn"
-                onClick={() => window.open("/download", "_blank")}
-              >
-                <FontAwesomeIcon icon={faDownload} />
-                Download App
-              </Button>
+              <a
+  href="/assets/nea-assist.apk"
+  download
+  style={{ textDecoration: "none" }}
+>
+  <Button variant="outline-success" className="custom-btn">
+    <FontAwesomeIcon icon={faDownload} />
+    Download App
+  </Button>
+</a>
+
 
               {!user ? (
                 <Button

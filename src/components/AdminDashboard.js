@@ -7,7 +7,14 @@ import {
   updateDoc,
   deleteDoc,
 } from "firebase/firestore";
-import { db } from "../firebase";
+
+import {
+  ref,
+  uploadBytes,
+  getDownloadURL,
+} from "firebase/storage";
+
+import { db, storage } from "../firebase";
 import {
   Container,
   Row,
@@ -16,6 +23,7 @@ import {
   Button,
   Modal,
   Form,
+  Image,
 } from "react-bootstrap";
 import CourseManager from "./CourseManager";
 
@@ -29,6 +37,8 @@ const AdminDashboard = () => {
   const [showAddModal, setShowAddModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [selectedUniversity, setSelectedUniversity] = useState(null);
+  const [newUniversityLogo, setNewUniversityLogo] = useState(null);
+  const [editUniversityLogo, setEditUniversityLogo] = useState(null);
 
   useEffect(() => {
     fetchUniversities();
@@ -36,33 +46,56 @@ const AdminDashboard = () => {
 
   const fetchUniversities = async () => {
     const querySnapshot = await getDocs(collection(db, "universities"));
-    setUniversities(
-      querySnapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }))
-    );
+    setUniversities(querySnapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() })));
   };
 
   const handleAddUniversity = async () => {
     if (!newUniversityName.trim()) return alert("University name cannot be empty");
+
+    let logoURL = "";
+    if (newUniversityLogo) {
+      const logoRef = ref(storage, `university_logos/${Date.now()}_${newUniversityLogo.name}`);
+      await uploadBytes(logoRef, newUniversityLogo);
+      logoURL = await getDownloadURL(logoRef);
+    }
+
     await addDoc(collection(db, "universities"), {
       name: newUniversityName,
       type: newUniversityType,
+      logo: logoURL,
     });
+
     setNewUniversityName("");
     setNewUniversityType("university");
+    setNewUniversityLogo(null);
     setShowAddModal(false);
     fetchUniversities();
   };
 
   const handleEditUniversity = async () => {
     if (!editUniversityName.trim()) return alert("University name cannot be empty");
+
     const universityRef = doc(db, "universities", editUniversityId);
-    await updateDoc(universityRef, {
+
+    let logoURL = "";
+    if (editUniversityLogo) {
+      const logoRef = ref(storage, `university_logos/${Date.now()}_${editUniversityLogo.name}`);
+      await uploadBytes(logoRef, editUniversityLogo);
+      logoURL = await getDownloadURL(logoRef);
+    }
+
+    const updateData = {
       name: editUniversityName,
       type: editUniversityType,
-    });
+      ...(logoURL && { logo: logoURL }),
+    };
+
+    await updateDoc(universityRef, updateData);
+
     setEditUniversityId(null);
     setEditUniversityName("");
     setEditUniversityType("university");
+    setEditUniversityLogo(null);
     setShowEditModal(false);
     fetchUniversities();
   };
@@ -86,10 +119,20 @@ const AdminDashboard = () => {
       <Row>
         {universities.map((university) => (
           <Col xs={12} sm={6} md={4} key={university.id} className="mb-4">
-            <Card className="border border-primary border-opacity-25 shadow-lg rounded-4 h-100 hover-shadow transition">
+            <Card className="border border-primary border-opacity-25 shadow-lg rounded-4 h-100">
               <Card.Body>
-                <Card.Title>{university.name}</Card.Title>
-                <Card.Subtitle className="text-muted mt-1">
+                <div className="text-center mb-2">
+                  {university.logo && (
+                    <Image
+                      src={university.logo}
+                      alt="Logo"
+                      fluid
+                      style={{ maxHeight: "80px", objectFit: "contain" }}
+                    />
+                  )}
+                </div>
+                <Card.Title className="text-center">{university.name}</Card.Title>
+                <Card.Subtitle className="text-muted text-center">
                   {university.type === "board" ? "📘 Board Level" : "🎓 University Level"}
                 </Card.Subtitle>
                 <div className="d-flex justify-content-between mt-3 flex-wrap gap-2">
@@ -132,7 +175,7 @@ const AdminDashboard = () => {
         </div>
       )}
 
-      {/* Add University Modal */}
+      {/* Add Modal */}
       <Modal show={showAddModal} onHide={() => setShowAddModal(false)} centered>
         <Modal.Header closeButton>
           <Modal.Title>Add New University/Board</Modal.Title>
@@ -157,6 +200,14 @@ const AdminDashboard = () => {
               <option value="board">Board Level</option>
             </Form.Select>
           </Form.Group>
+          <Form.Group className="mb-3">
+            <Form.Label>Logo (optional)</Form.Label>
+            <Form.Control
+              type="file"
+              accept="image/*"
+              onChange={(e) => setNewUniversityLogo(e.target.files[0])}
+            />
+          </Form.Group>
         </Modal.Body>
         <Modal.Footer>
           <Button variant="secondary" onClick={() => setShowAddModal(false)}>
@@ -168,7 +219,7 @@ const AdminDashboard = () => {
         </Modal.Footer>
       </Modal>
 
-      {/* Edit University Modal */}
+      {/* Edit Modal */}
       <Modal show={showEditModal} onHide={() => setShowEditModal(false)} centered>
         <Modal.Header closeButton>
           <Modal.Title>Edit University/Board</Modal.Title>
@@ -192,6 +243,14 @@ const AdminDashboard = () => {
               <option value="university">University Level</option>
               <option value="board">Board Level</option>
             </Form.Select>
+          </Form.Group>
+          <Form.Group className="mb-3">
+            <Form.Label>Change Logo (optional)</Form.Label>
+            <Form.Control
+              type="file"
+              accept="image/*"
+              onChange={(e) => setEditUniversityLogo(e.target.files[0])}
+            />
           </Form.Group>
         </Modal.Body>
         <Modal.Footer>

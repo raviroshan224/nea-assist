@@ -6,7 +6,7 @@ import { faUser, faSignInAlt, faDownload } from "@fortawesome/free-solid-svg-ico
 import { getAuth, signOut } from "firebase/auth";
 import { doc, getDoc } from "firebase/firestore";
 import { db } from "../firebase";
-import logo from "../assets/nea-logo.png";
+import logo from "../nea-logo.png";
 
 const NavbarComponent = () => {
   const auth = getAuth();
@@ -160,15 +160,15 @@ const NavbarComponent = () => {
 
             <Nav className="ms-auto d-flex align-items-center gap-2 mt-3 mt-lg-0">
               <a
-  href="/assets/nea-assist.apk"
-  download
-  style={{ textDecoration: "none" }}
->
-  <Button variant="outline-success" className="custom-btn">
-    <FontAwesomeIcon icon={faDownload} />
-    Download App
-  </Button>
-</a>
+                href="/assets/nea-assist.apk"
+                download
+                style={{ textDecoration: "none" }}
+              >
+                <Button variant="outline-success" className="custom-btn">
+                  <FontAwesomeIcon icon={faDownload} />
+                  Download App
+                </Button>
+              </a>
 
 
               {!user ? (

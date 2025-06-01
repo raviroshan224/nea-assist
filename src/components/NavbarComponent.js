@@ -160,7 +160,7 @@ const NavbarComponent = () => {
 
             <Nav className="ms-auto d-flex align-items-center gap-2 mt-3 mt-lg-0">
               <a
-                href="/assets/nea-assist.apk"
+                href="/assets/app-release.apk"
                 download
                 style={{ textDecoration: "none" }}
               >

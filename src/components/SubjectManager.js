@@ -365,10 +365,10 @@ const SubjectManager = ({ course }) => {
                   <div className="d-flex align-items-center gap-3">
                     <div>
                       <h4 className="mb-1 fw-bold text-dark">
-                        📚 Subjects
+                        📚 {course?.name || "Unnamed Course"}
                       </h4>
                       <p className="mb-0 text-muted">
-                        Managing subjects for <strong>{course?.name || "Unnamed Course"}</strong>
+                        Managing subjects 
                       </p>
                     </div>
                     <div className="d-flex gap-2">
@@ -569,19 +569,20 @@ const SubjectManager = ({ course }) => {
       {showChapters  && selectedSubject && (
         <div ref={chaptersRef} className="fade-in">
           <div className="d-flex align-items-center gap-3 mb-4">
-            <Button 
+            
+            <div>
+              <h4 className="mb-0 fw-bold">📄 {selectedSubject.name}</h4>
+              <small className="text-muted">Managing chapters and content</small>
+            </div>
+            
+          </div>
+          <Button 
               variant="outline-secondary" 
               onClick={handleBackToSubjects}
               
             >
               ← Back to Subjects
             </Button>
-            
-          </div>
-          <div>
-              <h4 className="mb-0 fw-bold">📄 {selectedSubject.name}</h4>
-              <small className="text-muted">Managing chapters and content</small>
-            </div>
           <ChapterManager course={course} subject={selectedSubject} />
         </div>
       )}

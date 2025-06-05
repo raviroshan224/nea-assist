@@ -143,8 +143,8 @@ const CourseManager = ({ university }) => {
       {/* Header */}
       <div className="d-flex justify-content-between align-items-center mb-4">
         <div>
-          <h4 className="mb-1">📚 Courses</h4>
-          <small className="text-muted">{university?.name}</small>
+          <h4 className="mb-1">📚 {university?.name}</h4>
+          <small className="text-muted">Courses</small>
         </div>
         {!showSubjects && (
           <Button variant="primary" onClick={() => setShowAddModal(true)}>
@@ -232,8 +232,8 @@ const CourseManager = ({ university }) => {
       {showSubjects && selectedCourse && (
         <div ref={subjectsRef}>
           <div className="mb-3">
-            <h5>📖 {selectedCourse.name}</h5>
-            <small className="text-muted">Manage subjects for this course</small>
+            {/* <h5>📖 {selectedCourse.name}</h5>
+            <small className="text-muted">Manage subjects for this course</small> */}
           </div>
           <SubjectManager university={university} course={selectedCourse} />
         </div>

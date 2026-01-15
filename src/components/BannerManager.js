@@ -1,3 +1,4 @@
+// For image upload, use: https://imgbb.com/
 import React, { useState, useEffect } from "react";
 import {
   collection,
@@ -11,7 +12,7 @@ import {
   orderBy,
 } from "firebase/firestore";
 import { db } from "../firebase";
-import { processBannerImage, validateImageFile } from "../helpers/bannerHelper";
+import { validateImageUrl, IMAGE_HOSTING_TIPS } from "../helpers/bannerHelper";
 import {
   Container,
   Row,
@@ -29,7 +30,7 @@ import {
 const BannerManager = () => {
   const [banners, setBanners] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [uploading, setUploading] = useState(false);
+  const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
 
@@ -37,21 +38,21 @@ const BannerManager = () => {
   const [showAddModal, setShowAddModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [showHelpModal, setShowHelpModal] = useState(false);
 
   // Form states for adding
   const [newBanner, setNewBanner] = useState({
+    imageUrl: "",
     title: "",
     description: "",
     redirectUrl: "",
     isActive: true,
   });
-  const [newBannerImage, setNewBannerImage] = useState(null);
-  const [imagePreview, setImagePreview] = useState(null);
+  const [imagePreviewError, setImagePreviewError] = useState(false);
 
   // Form states for editing
   const [editBanner, setEditBanner] = useState(null);
-  const [editBannerImage, setEditBannerImage] = useState(null);
-  const [editImagePreview, setEditImagePreview] = useState(null);
+  const [editImagePreviewError, setEditImagePreviewError] = useState(false);
 
   // Delete target
   const [deleteTarget, setDeleteTarget] = useState(null);
@@ -76,43 +77,21 @@ const BannerManager = () => {
     }
   };
 
-  const handleImageChange = (e, isEdit = false) => {
-    const file = e.target.files[0];
-    if (file) {
-      // Validate using helper
-      const validation = validateImageFile(file);
-      if (!validation.valid) {
-        setError(validation.error);
-        return;
-      }
-
-      if (isEdit) {
-        setEditBannerImage(file);
-        setEditImagePreview(URL.createObjectURL(file));
-      } else {
-        setNewBannerImage(file);
-        setImagePreview(URL.createObjectURL(file));
-      }
-      setError("");
-    }
-  };
-
   const handleAddBanner = async () => {
-    if (!newBannerImage) {
-      setError("Please select a banner image");
+    // Validate image URL
+    const validation = validateImageUrl(newBanner.imageUrl);
+    if (!validation.valid) {
+      setError(validation.error);
       return;
     }
 
     try {
-      setUploading(true);
+      setSaving(true);
       setError("");
 
-      // Convert image to Base64 (no Firebase Storage, no CORS issues)
-      const imageUrl = await processBannerImage(newBannerImage);
-
-      // Save to Firestore
+      // Save URL directly to Firestore (no upload, no Base64)
       await addDoc(collection(db, "banners"), {
-        imageUrl,
+        imageUrl: newBanner.imageUrl.trim(),
         title: newBanner.title.trim(),
         description: newBanner.description.trim(),
         redirectUrl: newBanner.redirectUrl.trim(),
@@ -122,13 +101,13 @@ const BannerManager = () => {
 
       // Reset form
       setNewBanner({
+        imageUrl: "",
         title: "",
         description: "",
         redirectUrl: "",
         isActive: true,
       });
-      setNewBannerImage(null);
-      setImagePreview(null);
+      setImagePreviewError(false);
       setShowAddModal(false);
       setSuccess("Banner added successfully!");
       setTimeout(() => setSuccess(""), 3000);
@@ -137,29 +116,27 @@ const BannerManager = () => {
       console.error("Error adding banner:", err);
       setError("Failed to add banner. Please try again.");
     } finally {
-      setUploading(false);
+      setSaving(false);
     }
   };
 
   const handleEditBanner = async () => {
     if (!editBanner) return;
 
+    // Validate image URL
+    const validation = validateImageUrl(editBanner.imageUrl);
+    if (!validation.valid) {
+      setError(validation.error);
+      return;
+    }
+
     try {
-      setUploading(true);
+      setSaving(true);
       setError("");
 
-      let imageUrl = editBanner.imageUrl;
-
-      // If new image selected, convert to Base64
-      if (editBannerImage) {
-        // No need to delete old image - it's just a string in Firestore
-        // Convert new image to Base64
-        imageUrl = await processBannerImage(editBannerImage);
-      }
-
-      // Update banner
+      // Update banner with new URL
       await updateDoc(doc(db, "banners", editBanner.id), {
-        imageUrl,
+        imageUrl: editBanner.imageUrl.trim(),
         title: editBanner.title.trim(),
         description: editBanner.description.trim(),
         redirectUrl: editBanner.redirectUrl.trim(),
@@ -168,8 +145,7 @@ const BannerManager = () => {
 
       // Reset form
       setEditBanner(null);
-      setEditBannerImage(null);
-      setEditImagePreview(null);
+      setEditImagePreviewError(false);
       setShowEditModal(false);
       setSuccess("Banner updated successfully!");
       setTimeout(() => setSuccess(""), 3000);
@@ -178,7 +154,7 @@ const BannerManager = () => {
       console.error("Error updating banner:", err);
       setError("Failed to update banner. Please try again.");
     } finally {
-      setUploading(false);
+      setSaving(false);
     }
   };
 
@@ -186,11 +162,10 @@ const BannerManager = () => {
     if (!deleteTarget) return;
 
     try {
-      setUploading(true);
+      setSaving(true);
       setError("");
 
-      // No need to delete from storage - image is Base64 string in Firestore
-      // Just delete the Firestore document
+      // Just delete the Firestore document (no storage cleanup needed)
       await deleteDoc(doc(db, "banners", deleteTarget.id));
 
       setDeleteTarget(null);
@@ -202,13 +177,12 @@ const BannerManager = () => {
       console.error("Error deleting banner:", err);
       setError("Failed to delete banner. Please try again.");
     } finally {
-      setUploading(false);
+      setSaving(false);
     }
   };
 
   const handleToggleActive = async (banner) => {
     try {
-      // Simply toggle this banner's active status (no deactivation of others)
       await updateDoc(doc(db, "banners", banner.id), {
         isActive: !banner.isActive,
       });
@@ -221,7 +195,7 @@ const BannerManager = () => {
 
   const openEditModal = (banner) => {
     setEditBanner({ ...banner });
-    setEditImagePreview(banner.imageUrl);
+    setEditImagePreviewError(false);
     setShowEditModal(true);
   };
 
@@ -233,21 +207,20 @@ const BannerManager = () => {
   const closeAddModal = () => {
     setShowAddModal(false);
     setNewBanner({
+      imageUrl: "",
       title: "",
       description: "",
       redirectUrl: "",
       isActive: true,
     });
-    setNewBannerImage(null);
-    setImagePreview(null);
+    setImagePreviewError(false);
     setError("");
   };
 
   const closeEditModal = () => {
     setShowEditModal(false);
     setEditBanner(null);
-    setEditBannerImage(null);
-    setEditImagePreview(null);
+    setEditImagePreviewError(false);
     setError("");
   };
 
@@ -267,9 +240,14 @@ const BannerManager = () => {
           <h4 className="fw-bold mb-1">🖼️ Banner Management</h4>
           <p className="text-muted mb-0">Manage ads and notices displayed to users</p>
         </div>
-        <Button variant="primary" onClick={() => setShowAddModal(true)}>
-          + Add New Banner
-        </Button>
+        <div className="d-flex gap-2">
+          <Button variant="outline-info" size="sm" onClick={() => setShowHelpModal(true)}>
+            ❓ How to add images
+          </Button>
+          <Button variant="primary" onClick={() => setShowAddModal(true)}>
+            + Add New Banner
+          </Button>
+        </div>
       </div>
 
       {error && (
@@ -388,27 +366,40 @@ const BannerManager = () => {
           <Form>
             <Form.Group className="mb-3">
               <Form.Label>
-                Banner Image <span className="text-danger">*</span>
+                Image URL <span className="text-danger">*</span>
               </Form.Label>
               <Form.Control
-                type="file"
-                accept="image/*"
-                onChange={(e) => handleImageChange(e, false)}
+                type="url"
+                placeholder="https://example.com/banner-image.jpg"
+                value={newBanner.imageUrl}
+                onChange={(e) => {
+                  setNewBanner({ ...newBanner, imageUrl: e.target.value });
+                  setImagePreviewError(false);
+                }}
               />
               <Form.Text className="text-muted">
-                Recommended size: 1200x400 pixels. Max file size: 5MB
+                Paste a public HTTPS image URL (Google Drive, Imgur, imgBB, etc.)
               </Form.Text>
             </Form.Group>
 
-            {imagePreview && (
+            {/* Image Preview */}
+            {newBanner.imageUrl && newBanner.imageUrl.startsWith("https://") && (
               <div className="mb-3 text-center">
-                <Image
-                  src={imagePreview}
-                  alt="Preview"
-                  fluid
-                  rounded
-                  style={{ maxHeight: "200px" }}
-                />
+                {!imagePreviewError ? (
+                  <Image
+                    src={newBanner.imageUrl}
+                    alt="Preview"
+                    fluid
+                    rounded
+                    style={{ maxHeight: "200px" }}
+                    onError={() => setImagePreviewError(true)}
+                  />
+                ) : (
+                  <Alert variant="warning" className="mb-0">
+                    ⚠️ Unable to load image preview. The URL may be invalid or blocked by CORS.
+                    The banner may still work on mobile apps.
+                  </Alert>
+                )}
               </div>
             )}
 
@@ -462,21 +453,18 @@ const BannerManager = () => {
                   setNewBanner({ ...newBanner, isActive: e.target.checked })
                 }
               />
-              <Form.Text className="text-muted">
-                Only one banner can be active at a time
-              </Form.Text>
             </Form.Group>
           </Form>
         </Modal.Body>
         <Modal.Footer>
-          <Button variant="secondary" onClick={closeAddModal} disabled={uploading}>
+          <Button variant="secondary" onClick={closeAddModal} disabled={saving}>
             Cancel
           </Button>
-          <Button variant="primary" onClick={handleAddBanner} disabled={uploading}>
-            {uploading ? (
+          <Button variant="primary" onClick={handleAddBanner} disabled={saving}>
+            {saving ? (
               <>
                 <Spinner animation="border" size="sm" className="me-2" />
-                Uploading...
+                Saving...
               </>
             ) : (
               "Add Banner"
@@ -494,26 +482,40 @@ const BannerManager = () => {
           {editBanner && (
             <Form>
               <Form.Group className="mb-3">
-                <Form.Label>Banner Image</Form.Label>
+                <Form.Label>
+                  Image URL <span className="text-danger">*</span>
+                </Form.Label>
                 <Form.Control
-                  type="file"
-                  accept="image/*"
-                  onChange={(e) => handleImageChange(e, true)}
+                  type="url"
+                  placeholder="https://example.com/banner-image.jpg"
+                  value={editBanner.imageUrl || ""}
+                  onChange={(e) => {
+                    setEditBanner({ ...editBanner, imageUrl: e.target.value });
+                    setEditImagePreviewError(false);
+                  }}
                 />
                 <Form.Text className="text-muted">
-                  Leave empty to keep current image
+                  Paste a public HTTPS image URL
                 </Form.Text>
               </Form.Group>
 
-              {editImagePreview && (
+              {/* Image Preview */}
+              {editBanner.imageUrl && editBanner.imageUrl.startsWith("https://") && (
                 <div className="mb-3 text-center">
-                  <Image
-                    src={editImagePreview}
-                    alt="Preview"
-                    fluid
-                    rounded
-                    style={{ maxHeight: "200px" }}
-                  />
+                  {!editImagePreviewError ? (
+                    <Image
+                      src={editBanner.imageUrl}
+                      alt="Preview"
+                      fluid
+                      rounded
+                      style={{ maxHeight: "200px" }}
+                      onError={() => setEditImagePreviewError(true)}
+                    />
+                  ) : (
+                    <Alert variant="warning" className="mb-0">
+                      ⚠️ Unable to load image preview. The URL may be invalid or blocked by CORS.
+                    </Alert>
+                  )}
                 </div>
               )}
 
@@ -569,11 +571,11 @@ const BannerManager = () => {
           )}
         </Modal.Body>
         <Modal.Footer>
-          <Button variant="secondary" onClick={closeEditModal} disabled={uploading}>
+          <Button variant="secondary" onClick={closeEditModal} disabled={saving}>
             Cancel
           </Button>
-          <Button variant="primary" onClick={handleEditBanner} disabled={uploading}>
-            {uploading ? (
+          <Button variant="primary" onClick={handleEditBanner} disabled={saving}>
+            {saving ? (
               <>
                 <Spinner animation="border" size="sm" className="me-2" />
                 Saving...
@@ -600,6 +602,9 @@ const BannerManager = () => {
                 fluid
                 rounded
                 style={{ maxHeight: "150px" }}
+                onError={(e) => {
+                  e.target.src = "https://via.placeholder.com/400x200?text=Image+Not+Found";
+                }}
               />
               {deleteTarget.title && (
                 <p className="mt-2 fw-bold">{deleteTarget.title}</p>
@@ -614,16 +619,16 @@ const BannerManager = () => {
           <Button
             variant="secondary"
             onClick={() => setShowDeleteModal(false)}
-            disabled={uploading}
+            disabled={saving}
           >
             Cancel
           </Button>
           <Button
             variant="danger"
             onClick={handleDeleteBanner}
-            disabled={uploading}
+            disabled={saving}
           >
-            {uploading ? (
+            {saving ? (
               <>
                 <Spinner animation="border" size="sm" className="me-2" />
                 Deleting...
@@ -631,6 +636,47 @@ const BannerManager = () => {
             ) : (
               "Delete Banner"
             )}
+          </Button>
+        </Modal.Footer>
+      </Modal>
+
+      {/* Help Modal - How to add images */}
+      <Modal show={showHelpModal} onHide={() => setShowHelpModal(false)} centered>
+        <Modal.Header closeButton>
+          <Modal.Title>📖 How to Add Banner Images</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <Alert variant="info" className="mb-3">
+            <strong>We use imgBB for image hosting!</strong><br />
+            Upload your banner image to imgBB, then paste the direct URL here.
+          </Alert>
+
+          <h6 className="fw-bold">📸 Steps to upload to imgBB:</h6>
+          <ol>
+            <li>Go to <a href="https://imgbb.com/" target="_blank" rel="noopener noreferrer">imgbb.com</a></li>
+            <li>Click <strong>"Start Uploading"</strong></li>
+            <li>Select your banner image</li>
+            <li>Click <strong>"Upload"</strong></li>
+            <li>After upload, find <strong>"Direct Link"</strong> in the dropdown</li>
+            <li>Copy the Direct Link URL</li>
+            <li>Paste it here in the Image URL field</li>
+          </ol>
+
+          <Alert variant="warning" className="mb-3">
+            <strong>⚠️ Important:</strong> Make sure to copy the <strong>"Direct Link"</strong> (ends with .jpg, .png, etc.),
+            NOT the "HTML Link" or "BBCode".
+          </Alert>
+
+          <Alert variant="success" className="mb-0">
+            <strong>✅ Test your URL:</strong> Paste it directly in your browser. If the image displays, it will work!
+          </Alert>
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="outline-primary" href="https://imgbb.com/" target="_blank" rel="noopener noreferrer">
+            Open imgBB
+          </Button>
+          <Button variant="primary" onClick={() => setShowHelpModal(false)}>
+            Got it!
           </Button>
         </Modal.Footer>
       </Modal>

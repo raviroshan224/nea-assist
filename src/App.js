@@ -13,10 +13,14 @@ import Signup from './components/Signup';
 import AdminLogin from './components/AdminLogin';
 import ProtectedAdminRoute from './components/ProtectedAdminRoute';
 import CoursePage from './components/CoursePage';
+import Banner from './components/Banner';
 
 function App() {
   return (
     <Router>
+      {/* Banner mounted at root level - outside Routes, always visible */}
+      <Banner />
+      
       <Routes>
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<Signup />} />

@@ -24,10 +24,14 @@ import {
   Modal,
   Form,
   Image,
+  Nav,
+  Tab,
 } from "react-bootstrap";
 import CourseManager from "./CourseManager";
+import BannerManager from "./BannerManager";
 
 const AdminDashboard = () => {
+  const [activeTab, setActiveTab] = useState("universities");
   const [universities, setUniversities] = useState([]);
   const [newUniversityName, setNewUniversityName] = useState("");
   const [newUniversityType, setNewUniversityType] = useState("university");
@@ -109,14 +113,32 @@ const AdminDashboard = () => {
 
   return (
     <Container className="py-4">
-      <div className="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center mb-4 gap-3">
-        <h3 className="fw-bold">NEA Assist</h3>
-        <Button variant="primary" onClick={() => setShowAddModal(true)}>
-          + Add University/Board
-        </Button>
-      </div>
+      <h3 className="fw-bold mb-4">NEA Assist Admin</h3>
 
-      <Row>
+      <Tab.Container activeKey={activeTab} onSelect={(k) => setActiveTab(k)}>
+        <Nav variant="tabs" className="mb-4">
+          <Nav.Item>
+            <Nav.Link eventKey="universities">🏫 Universities</Nav.Link>
+          </Nav.Item>
+          <Nav.Item>
+            <Nav.Link eventKey="banners">🖼️ Banners</Nav.Link>
+          </Nav.Item>
+        </Nav>
+
+        <Tab.Content>
+          <Tab.Pane eventKey="banners">
+            <BannerManager />
+          </Tab.Pane>
+
+          <Tab.Pane eventKey="universities">
+            <div className="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center mb-4 gap-3">
+              <h4 className="fw-bold">Manage Universities</h4>
+              <Button variant="primary" onClick={() => setShowAddModal(true)}>
+                + Add University/Board
+              </Button>
+            </div>
+
+            <Row>
         {universities.map((university) => (
           <Col xs={12} sm={6} md={4} key={university.id} className="mb-4">
             <Card className="border border-primary border-opacity-25 shadow-lg rounded-4 h-100">
@@ -174,6 +196,9 @@ const AdminDashboard = () => {
           <CourseManager university={selectedUniversity} />
         </div>
       )}
+          </Tab.Pane>
+        </Tab.Content>
+      </Tab.Container>
 
       {/* Add Modal */}
       <Modal show={showAddModal} onHide={() => setShowAddModal(false)} centered>

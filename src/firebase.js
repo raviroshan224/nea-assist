@@ -12,7 +12,7 @@ const firebaseConfig = {
   apiKey: "AIzaSyBpwtANMCtL4-4OeHDpcP1_NPQx62qwDnE",
   authDomain: "nea-assist-20545.firebaseapp.com",
   projectId: "nea-assist-20545",
-  storageBucket: "nea-assist-20545.firebasestorage.app",
+  storageBucket: "nea-assist-20545.appspot.com",
   messagingSenderId: "1054747002414",
   appId: "1:1054747002414:web:b854df6443f240b6da01bf",
   measurementId: "G-9KGYEFBHT5"
